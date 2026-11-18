@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+
+        # -- User Service Public Apis so no JWT required --
+        - id: user-service-public
+          uri: http://localhost:8081
+          predicates:
+            - "Path=/api/v1/users/register,/api/v1/users/login"
+
+        # -- User Service Private Apis so JWT required --
+        - id: user-service
+          uri: http://localhost:8081
+          predicates:
+            - "Path=/api/v1/users/**"
+          filters:
+            - name : JwtAuthFilter
+
+        # -- Market Data Service JWT required --
+        - id: market-data-service
+          uri: http://localhost:8082
+          predicates:
+            - "Path=/api/v1/markets/**"
+          filters:
+              - name: JwtAuthFilter
+
+        # -- WebSocket so no JWT required --
+        - id: market-websocket
+          uri: ws://localhost:8082
+          predicates:
+            - "Path=/ws/**"
+
+        # -- Order Service JWT required --
+        - id: order-service
+          uri: http://localhost:8083
+          predicates:
+            - "Path=/api/v1/orders/**"
+          filters:
+            - name: JwtAuthFilter
+
+        # -- Portfolio Service JWT required --
+        - id: portfolio-service
+          uri: http://localhost:8084
+          predicates:
+            - "Path=/api/v1/portfolio/**"
+          filters:
+            - name: JwtAuthFilter
+
+server:
+  port: 8080
+
+# JWT secret must exactly match user service's JWT secret
+jwt:
+  secret: ${JWT_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, gateway
